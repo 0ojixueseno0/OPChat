@@ -1,0 +1,79 @@
+on load:
+	send "&a[OPCHAT] &ePlugin Loaded." to console
+	set {opchat.c.chat} to "&b[OPCHAT]&c$player &f&l>>&r $message"
+	stop
+on unload:
+	send "&a[OPCHAT] &ePlugin Unloaded." to console
+	loop {opchat.c.players::*}:
+		set {opchat.c.chatmode.%loop-value%} to "allPlayers"
+	delete {opchat.c.players::*}
+	stop
+command /opchat <text=help>:
+	permission: opchat.all
+	description: &aAdmin's chat room. by 0ojixueseno0.
+	aliases: /oc
+	trigger:
+		if sender is console:
+			message "&a[OPCHAT] &c指令只能在游戏内使用!"
+			stop
+		else:
+			if arg 1 is "help":
+				message "&b======== &aOPChat &b========"
+				message "&b/opchat(oc) help &e- 查看帮助"
+				message "&b/opchat(oc) toggle &e- 切换聊天模式"
+				message "&b/opchat(oc) reload &e- 重载聊天室(出现复读机bug时请使用)"
+				message "&7你的聊天模式为: &a%{opchat.c.chatmode.%player%}%"
+				message "&7聊天室内的成员: &b%{opchat.c.players::*}%"
+				message "&b======== &aOPChat &b========"
+				stop
+			else if arg 1 is "toggle":
+				set {_player} to player's name
+				if {opchat.c.chatmode.%player%} is not set:
+					set {opchat.c.chatmode.%player%} to "opOnly"
+					message "&a[OPCHAT] &d已加入管理员聊天室"
+					add {_player} to {opchat.c.players::*}
+					loop {opchat.c.players::*}:
+						set {_p} to loop-value parsed as player
+						send "&e[OPCHAT]&b%{_player}%&a加入了聊天室" to {_p}
+					stop
+				else:
+					if {opchat.c.chatmode.%player%} is "opOnly":
+						set {opchat.c.chatmode.%player%} to "allPlayers"
+						message "&a[OPCHAT] &e已离开管理员聊天室"
+						remove {_player} from {opchat.c.players::*}
+						loop {opchat.c.players::*}:
+							set {_p} to loop-value parsed as player
+							send "&e[OPCHAT]&b%{_player}%&c离开了聊天室" to {_p}
+						stop
+					else:
+						set {opchat.c.chatmode.%player%} to "opOnly"
+						message "&a[OPCHAT] &d已加入管理员聊天室"
+						add {_player} to {opchat.c.players::*}
+						loop {opchat.c.players::*}:
+							set {_p} to loop-value parsed as player
+							send "&e[OPCHAT]&b%{_player}%&a加入了聊天室" to {_p}
+						stop
+			else if arg 1 is "reload":
+				loop {opchat.c.players::*}:
+					set {opchat.c.chatmode.%loop-value%} to "allPlayers"
+				delete {opchat.c.players::*}
+				message "&d[OPCHAT] 成功重载插件"
+				stop
+			else:
+				message "&a[OPCHAT] &c您的输入有误: /oc <help|toggle>"
+				stop
+on chat:
+	if {opchat.c.chatmode.%player%} is set:
+		if {opchat.c.chatmode.%player%} is "allPlayers":
+			stop
+		else:
+			cancel event
+			set {_chat} to {opchat.c.chat}
+			replace every "$player" in {_chat} with player's name
+			replace every "$message" in {_chat} with chat message
+			loop {opchat.c.players::*}:
+				set {_player} to loop-value parsed as player
+				send "%{_chat}%" to {_player}
+			stop
+	else:
+		stop
